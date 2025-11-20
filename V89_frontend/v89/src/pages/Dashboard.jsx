@@ -13,11 +13,19 @@ function Dashboard() {
         energy hasn't grown as rapidly as expected. Yet many companies have
         adopted a cleaner, more efficient way of operating. For example, Blue
         World Technologies has been developing methanol fuel cells to power
-        heavy-duty vehicles. Nucor is another company that has been changing the
-        way it produces steel by using electric arc furnace (EAF) technology,
-        creating a zero-carbon, low-emission process. These are just a few
-        companies that have innovated in renewable energy by adopting new
-        manufacturing processes. Click the link to read more...
+        heavy-duty vehicles.
+        <span>
+          <a href="https://nucor.com/madeforgood/electra-case-study"> Nucor </a>
+        </span>
+        is another company that has been changing the way it produces steel by
+        using electric arc furnace (EAF) technology, creating a zero-carbon,
+        low-emission process. These are just a few companies that have innovated
+        in renewable energy by adopting new manufacturing processes.
+        <span>
+          <a href="https://www.breakthroughenergy.org/">
+            Click the link to read more...
+          </a>
+        </span>
       </p>
     </div>
   );

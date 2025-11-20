@@ -7,6 +7,7 @@ const expressJwt = require("express-jwt");
 const { error } = require("console");
 const cleanEnergyData = require("./public/cleanEnergyData"); // Import the data
 const data = require("./public/cleanEnergyData");
+const forecastData = require("./public/forecast_data");
 
 // app.use((req, res, next) => {
 //   res.setHeader("Access-Control-Allow-Origin", "http://localhost:3000");
@@ -109,6 +110,18 @@ app.get("/api/summary", (req, res) => {
     status: "Success",
     total: cleanEnergyData.length,
     data: cleanEnergyData,
+  });
+});
+
+// --- NEW ENDPOINT: GET /api/forecast ---
+app.get("/api/reports", (req, res) => {
+  console.log("HIT: /api/forecast (JSON)");
+
+  // Serve the data in a clean, consistent wrapper object
+  return res.json({
+    status: "success",
+    total: forecastData.length,
+    data: forecastData,
   });
 });
 
