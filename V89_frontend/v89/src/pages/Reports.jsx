@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import Articles from "../components/Articles";
 import { Bar } from "react-chartjs-2";
 import {
   Chart as ChartJS,
@@ -127,35 +128,39 @@ function Reports() {
   }
 
   return (
-    <div className="main-content">
-      <div
-        style={{
-          width: "60%",
-          margin: "40px auto",
-          border: "1px solid #ccc",
-          padding: "20px",
-          borderRadius: "8px",
-          boxShadow: "2px 2px 10px rgba(0,0,0,0.1)",
-        }}>
-        <h2 style={{ textAlign: "center", marginBottom: "30px" }}>
-          Technology Forecast
-        </h2>
-        {chartData ? (
-          <Bar options={options} data={chartData} />
-        ) : (
-          <p>No forecast data available.</p>
-        )}
-        <p>
-          Data source:{" "}
-          <span>
-            <a href="https://www.iea.org/reports/renewables-2024/global-overview">
-              Global electricity generation by renewable energy technology main
-              case, 2023 and 2030.
-            </a>
-          </span>
-        </p>
+    <>
+      <div className="main-content">
+        <div
+          style={{
+            width: "60%",
+            margin: "40px auto",
+            border: "1px solid #ccc",
+            padding: "20px",
+            borderRadius: "8px",
+            boxShadow: "2px 2px 10px rgba(0,0,0,0.1)",
+          }}>
+          <h2 style={{ textAlign: "center", marginBottom: "30px" }}>
+            Technology Forecast
+          </h2>
+          {chartData ? (
+            <Bar options={options} data={chartData} />
+          ) : (
+            <p>No forecast data available.</p>
+          )}
+          <p>
+            <span>
+              <a
+                href="https://www.iea.org/reports/renewables-2024/global-overview"
+                target="blanc">
+                Global electricity generation by renewable energy technology
+                main case, 2023 and 2030.
+              </a>
+            </span>
+          </p>
+        </div>
+        <Articles />
       </div>
-    </div>
+    </>
   );
 }
 

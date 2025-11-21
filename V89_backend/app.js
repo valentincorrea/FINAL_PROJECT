@@ -8,7 +8,30 @@ const { error } = require("console");
 const cleanEnergyData = require("./public/cleanEnergyData"); // Import the data
 const data = require("./public/cleanEnergyData");
 const forecastData = require("./public/forecast_data");
+const mysql = require("mysql2");
 
+// Database connection
+// const connection = mysql.createConnection({
+//   //   host: "localhost",
+//   host: "209.38.131.209",
+//   user: "appuser",
+//   password: "Xcvb-$123-Asdf",
+//   database: "article",
+// });
+
+// --- Database Connection Pool Setup ---
+const pool = mysql
+  .createPool({
+    // 💡 THIS IS WHERE 'pool' IS DEFINED
+    host: "209.38.131.209",
+    user: "appuser",
+    password: "Xcvb-$123-Asdf",
+    database: "article",
+    waitForConnections: true,
+    connectionLimit: 10,
+    queueLimit: 0,
+  })
+  .promise();
 // app.use((req, res, next) => {
 //   res.setHeader("Access-Control-Allow-Origin", "http://localhost:3000");
 //   res.setHeader("Access-Control-Allow-Origin", "Content-type,Authorization");
@@ -123,6 +146,36 @@ app.get("/api/reports", (req, res) => {
     total: forecastData.length,
     data: forecastData,
   });
+});
+
+// --- ARTICLES ENDPOINT (GET /api/reports/articles) ---
+app.get("/api/articles", async (req, res) => {
+  // 💡 SQL Query: Specify fields and table name 'articles'.
+  // We removed the redundant database prefix 'article.' since the pool points directly to it.
+  const query =
+    "SELECT title, body, article_url FROM articles ORDER BY title ASC";
+
+  try {
+    // Execute query using the async/await promise wrapper on the pool
+    const [results] = await pool.query(query);
+
+    console.log(`✅ Retrieved ${results.length} articles from the database.`);
+
+    // Return the data in a clean, consistent wrapper object
+    return res.json({
+      status: "success",
+      total: results.length,
+      data: results,
+    });
+  } catch (queryErr) {
+    console.error("❌ Database error fetching articles:", queryErr.stack);
+    // Log the exact query error to your terminal for debugging
+    return res.status(500).json({
+      status: "error",
+      message: "Failed to retrieve articles from the database.",
+      error: queryErr.message,
+    });
+  }
 });
 
 app.use(function (err, req, res, next) {
