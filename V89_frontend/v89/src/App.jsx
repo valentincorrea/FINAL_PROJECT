@@ -1,37 +1,107 @@
-// import { useState } from "react";
-// import reactLogo from "./assets/react.svg";
-// import viteLogo from "/vite.svg";
-import "./App.css";
+// // import { useState } from "react";
+// // import reactLogo from "./assets/react.svg";
+// // import viteLogo from "/vite.svg";
+// import "./App.css";
 
-// Importing the test component
+// // Importing the test component
+// import NavBar from "./components/NavBar";
+// import Home from "./pages/Home";
+// import Dashboard from "./pages/Dashboard";
+// import Reports from "./pages/Reports";
+// import Summary from "./pages/Summary";
+// import Login from "./pages/Login";
+// import Footer from "./components/Footer";
+
+// // Importing the routes
+// import { Routes, Route, Router } from "react-router-dom";
+
+// function App() {
+//   // const [count, setCount] = useState(0);
+
+//   return (
+//     <>
+//       <div>
+//         <NavBar />
+//         <Routes>
+//           <Route path="/" element={<Home />} />
+//           <Route path="/dashboard" element={<Dashboard />} />
+//           <Route path="/reports" element={<Reports />} />
+//           <Route path="/summary" element={<Summary />} />
+//           <Route path="/login" element={<Login />} />
+//         </Routes>
+//         <Footer />
+//       </div>
+//     </>
+//   );
+// }
+
+// export default App;
+
+// App.jsx (Updated Imports)
+
+import "./App.css";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom"; // Use BrowserRouter if not already in the entry file
+
+// Importing Components
 import NavBar from "./components/NavBar";
+import Footer from "./components/Footer";
+import ProtectedRoute from "./components/ProtectedRoute"; // 💡 Import the security component
+
+// Importing Pages
 import Home from "./pages/Home";
 import Dashboard from "./pages/Dashboard";
 import Reports from "./pages/Reports";
 import Summary from "./pages/Summary";
 import Login from "./pages/Login";
-import Footer from "./components/Footer";
+// App.jsx
 
-// Importing the routes
-import { Routes, Route, Router } from "react-router-dom";
+// ... (Imports from Step 1)
 
 function App() {
-  // const [count, setCount] = useState(0);
-
   return (
+    // Note: If you don't wrap the entire app in <BrowserRouter>
+    // in your entry file (like main.jsx), you should wrap it here:
+    // <Router>
     <>
       <div>
         <NavBar />
         <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/reports" element={<Reports />} />
-          <Route path="/summary" element={<Summary />} />
+          {/* 1. LOGIN AS HOMEPAGE: The root path (/) now points to the Login page */}
+          <Route path="/" element={<Login />} />
+
+          {/* 2. Unprotected Login Route (Still needed for direct navigation) */}
           <Route path="/login" element={<Login />} />
+
+          {/* 3. PROTECTED ROUTES */}
+          <Route
+            path="/dashboard"
+            element={
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/reports"
+            element={
+              <ProtectedRoute>
+                <Reports />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/summary"
+            element={
+              <ProtectedRoute>
+                <Summary />
+              </ProtectedRoute>
+            }
+          />
         </Routes>
         <Footer />
       </div>
     </>
+    // </Router>
   );
 }
 

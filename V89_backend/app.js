@@ -121,10 +121,10 @@ app.get("/api/settings", jwtMw, (req, res) => {
   });
 });
 
-app.get("/api", (req, res) => {
-  // 💡 This is the JSON data the Home.jsx component is expecting
-  res.json({ users: ["userOne", "userTwo", "userThree"] });
-});
+// app.get("/api", (req, res) => {
+//   // 💡 This is the JSON data the Home.jsx component is expecting
+//   res.json({ users: ["userOne", "userTwo", "userThree"] });
+// });
 
 // Endpoint serving data to the Summary page
 app.get("/api/summary", (req, res) => {
