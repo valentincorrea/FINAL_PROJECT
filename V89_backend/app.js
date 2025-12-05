@@ -6,6 +6,7 @@ const jwt = require("jsonwebtoken");
 const expressJwt = require("express-jwt");
 const { error } = require("console");
 const cleanEnergyData = require("./public/cleanEnergyData"); // Import the data
+const { INVESTMENT_DATA } = require("./public/summaryData"); // Import the data
 const data = require("./public/cleanEnergyData");
 const forecastData = require("./public/forecast_data");
 const mysql = require("mysql2");
@@ -32,11 +33,6 @@ const pool = mysql
     queueLimit: 0,
   })
   .promise();
-// app.use((req, res, next) => {
-//   res.setHeader("Access-Control-Allow-Origin", "http://localhost:3000");
-//   res.setHeader("Access-Control-Allow-Origin", "Content-type,Authorization");
-//   next();
-// });
 // CORRECTED CORS AND PREFLIGHT HANDLER
 app.use((req, res, next) => {
   // Allow the client's origin (http://localhost:3000 in this case)
@@ -69,8 +65,8 @@ const jwtMw = expressJwt.expressjwt({
 let users = [
   {
     id: 1,
-    username: "val",
-    password: "val",
+    username: "valentin",
+    password: "valentin",
   },
 ];
 
@@ -88,7 +84,7 @@ app.post("/api/login", (req, res) => {
   }
   if (foundUser) {
     let token = jwt.sign({ id: user.id, username: user.username }, secretKey, {
-      expiresIn: "3m",
+      expiresIn: "15m",
     });
 
     res.json({
@@ -114,20 +110,8 @@ app.get("/api/dashboard", jwtMw, (req, res) => {
   });
 });
 
-app.get("/api/settings", jwtMw, (req, res) => {
-  res.json({
-    success: true,
-    settingsContent: `<h1>Welcome to the Settings Page</h1>`,
-  });
-});
-
-// app.get("/api", (req, res) => {
-//   // 💡 This is the JSON data the Home.jsx component is expecting
-//   res.json({ users: ["userOne", "userTwo", "userThree"] });
-// });
-
 // Endpoint serving data to the Summary page
-app.get("/api/summary", (req, res) => {
+app.get("/api/summary", jwtMw, (req, res) => {
   // json response
   return res.json({
     status: "Success",
@@ -137,7 +121,7 @@ app.get("/api/summary", (req, res) => {
 });
 
 // --- NEW ENDPOINT: GET /api/forecast ---
-app.get("/api/reports", (req, res) => {
+app.get("/api/reports", jwtMw, (req, res) => {
   console.log("HIT: /api/forecast (JSON)");
 
   // Serve the data in a clean, consistent wrapper object
@@ -148,28 +132,56 @@ app.get("/api/reports", (req, res) => {
   });
 });
 
-// --- ARTICLES ENDPOINT (GET /api/reports/articles) ---
-app.get("/api/articles", async (req, res) => {
-  // 💡 SQL Query: Specify fields and table name 'articles'.
-  // We removed the redundant database prefix 'article.' since the pool points directly to it.
-  const query =
-    "SELECT title, body, article_url FROM articles ORDER BY title ASC";
+// Protected endpoint to serve the investment data
+app.get("/api/summary-data", jwtMw, (req, res) => {
+  return res.json({
+    status: "success",
+    total: INVESTMENT_DATA.length,
+    data: INVESTMENT_DATA,
+  });
+});
+
+app.get("/api/articles", jwtMw, async (req, res) => {
+  // 💡 1. Retrieve article ID and optional search term
+  const articleId = req.query.id;
+  const searchTerm = req.query.search;
+
+  let query = "SELECT id, title, body, article_url FROM articles";
+  let queryParams = [];
+
+  // 💡 2. Prioritize filtering by ID
+  if (articleId) {
+    query += " WHERE id = ?";
+    queryParams.push(articleId);
+  }
+  // Otherwise, check for a search term
+  else if (searchTerm) {
+    query += " WHERE title LIKE ? OR body LIKE ?";
+    const wildCardTerm = `%${searchTerm}%`;
+    queryParams.push(wildCardTerm, wildCardTerm);
+  }
+
+  query += " ORDER BY id DESC"; // Order by ID to ensure ID 1 is easily found
 
   try {
-    // Execute query using the async/await promise wrapper on the pool
-    const [results] = await pool.query(query);
+    const [results] = await pool.query(query, queryParams);
 
-    console.log(`✅ Retrieved ${results.length} articles from the database.`);
+    // When fetching by ID, we return the single object directly (if found)
+    const dataToReturn = articleId
+      ? results.length > 0
+        ? results[0]
+        : null
+      : results;
 
-    // Return the data in a clean, consistent wrapper object
+    console.log(`✅ Retrieved ${results.length} article(s) from the database.`);
+
     return res.json({
       status: "success",
       total: results.length,
-      data: results,
+      data: dataToReturn,
     });
   } catch (queryErr) {
     console.error("❌ Database error fetching articles:", queryErr.stack);
-    // Log the exact query error to your terminal for debugging
     return res.status(500).json({
       status: "error",
       message: "Failed to retrieve articles from the database.",
@@ -189,11 +201,6 @@ app.use(function (err, req, res, next) {
   } else {
     next(err);
   }
-});
-
-// Adding a route
-app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "index.html"));
 });
 
 const PORT = 3000;

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
+// 💡 REINTRODUCED: Import the secure API client for fetching the article
+import apiClient from "../utils/apiClient";
 import { Bar } from "react-chartjs-2";
 import {
   Chart as ChartJS,
@@ -21,111 +22,191 @@ ChartJS.register(
   Legend
 );
 
-// Assuming the API is running on http://localhost:3000
-const API_URL = "/api/summary";
+// 💡 REMOVED: Static Data remains the same
+
+// 💡 NEW: API endpoint for fetching chart data
+const CHART_API_URL = "/api/summary-data";
+// API endpoint for the featured article (ID 2)
+const ARTICLES_API_URL = "/api/articles?id=2";
 
 function Summary() {
   const [chartData, setChartData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [featuredArticle, setFeaturedArticle] = useState(null);
+  const [articleError, setArticleError] = useState(null);
 
   useEffect(() => {
+    let chartError = null;
+    let articleErr = null;
+
+    // --- 1. Fetch Chart Data (Dynamic) ---
     const fetchChartData = async () => {
       try {
-        // 💡 Use Axios to make the GET request
-        const response = await axios.get(API_URL);
+        const response = await apiClient.get(CHART_API_URL);
+        const investmentData = response.data.data;
 
-        // The API returns data inside 'data' property
-        const plantData = response.data.data;
+        const labels = investmentData.map((item) => item.year);
+        const cleanData = investmentData.map((item) => item.clean);
+        const fossilData = investmentData.map((item) => item.fossil);
 
-        // --- Data Transformation for Chart.js ---
-        const labels = plantData.map((plant) => plant.source);
-        const capacityData = plantData.map((plant) => plant.capacity_mw);
-        const generationData = plantData.map(
-          (plant) => plant.generation_gwh_yr / 1000
-        ); // Convert GWh/yr to TWh/yr
-
-        // Structure the data object for the Bar chart
         const newChartData = {
           labels,
           datasets: [
             {
-              label: "Capacity (MW)",
-              data: capacityData,
-              backgroundColor: "rgba(54, 162, 235, 0.6)", // Blue for capacity
-              borderColor: "rgba(54, 162, 235, 1)",
-              yAxisID: "y1", // Assign to the primary y-axis
+              label: "Clean Energy Investment",
+              data: cleanData,
+              backgroundColor: "rgba(0, 119, 255, 0.7)",
+              borderColor: "rgba(0, 119, 255, 1)",
+              borderWidth: 1,
+              stack: "investment",
             },
             {
-              label: "Annual Generation (TWh)",
-              data: generationData,
-              backgroundColor: "rgba(75, 192, 192, 0.6)", // Green for generation
-              borderColor: "rgba(75, 192, 192, 1)",
-              yAxisID: "y2", // Assign to the secondary y-axis
+              label: "Fossil Fuel Investment",
+              data: fossilData,
+              backgroundColor: "rgba(102, 51, 153, 0.7)",
+              borderColor: "rgba(102, 51, 153, 1)",
+              borderWidth: 1,
+              stack: "investment",
             },
           ],
         };
-
         setChartData(newChartData);
-        setError(null);
+        chartError = null;
       } catch (err) {
-        console.error("Axios fetch failed:", err);
-        setError("Failed to load chart data. Check API connection.");
-      } finally {
-        setLoading(false);
+        console.error("Fetch failed for chart data:", err);
+        chartError = "Failed to load chart data. Check API connection.";
       }
     };
 
-    fetchChartData();
+    // --- 2. Fetch Featured Article (Dynamic) ---
+    const fetchFeaturedArticle = async () => {
+      try {
+        const response = await apiClient.get(ARTICLES_API_URL);
+        if (response.data.data) {
+          setFeaturedArticle(response.data.data);
+        } else {
+          setArticleError("Featured article (ID 2) not found.");
+        }
+      } catch (err) {
+        console.error("Fetch failed for featured article:", err);
+        articleErr = "Could not load featured article.";
+      }
+    };
+
+    // --- Execute both fetches and handle final state ---
+    Promise.all([fetchChartData(), fetchFeaturedArticle()])
+      .then(() => {
+        // Update error state if either fetch failed
+        if (chartError || articleErr) {
+          setError(chartError);
+          setArticleError(articleErr);
+        }
+      })
+      .catch((e) => {
+        // Catch any uncaught errors, though the specific try/catch blocks should handle most
+        setError(e.message);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
   }, []);
 
-  // --- Chart Options ---
+  // --- Chart Options (Remains the same) ---
   const options = {
     responsive: true,
     plugins: {
       legend: { position: "top" },
-      title: { display: true, text: "Clean Energy Plant Metrics" },
+      title: {
+        display: true,
+        text: "Global Investment in Energy (Billion USD)",
+        font: { size: 18 },
+      },
+      tooltip: {
+        mode: "index",
+        intersect: false,
+      },
     },
     scales: {
-      y1: {
-        type: "linear",
-        display: true,
-        position: "left",
-        title: { display: true, text: "Capacity (MW)" },
+      x: {
+        title: { display: true, text: "Year" },
+        stacked: true,
       },
-      y2: {
-        type: "linear",
-        display: true,
-        position: "right",
-        title: { display: true, text: "Generation (TWh)" },
-        grid: { drawOnChartArea: false }, // Only draw grid lines for the left axis
+      y: {
+        title: { display: true, text: "Investment (Billion USD)" },
+        stacked: true,
       },
     },
   };
 
   // --- Rendering ---
-
   if (loading) {
     return (
-      <div style={{ padding: "20px", fontSize: "1.2em" }}>
-        Loading chart data...
+      <div style={{ padding: "20px", fontSize: "1.2em", textAlign: "center" }}>
+        Loading summary and featured article...
       </div>
     );
   }
 
-  if (error) {
-    return <div style={{ padding: "20px", color: "red" }}>Error: {error}</div>;
+  if (error || articleError) {
+    return (
+      <div style={{ padding: "20px", color: "red", textAlign: "center" }}>
+        Error loading summary: **{error || articleError}**
+      </div>
+    );
   }
 
-  // Display the chart if data is available
   return (
     <div className="main-content">
-      <div style={{ width: "80%", margin: "40px auto" }}>
+      <div style={{ width: "60%", margin: "40px auto" }}>
+        {/* --- Chart Display Section --- */}
+        <h2 className="text-center mb-4">Global Energy Investment Trends</h2>
         {chartData ? (
           <Bar options={options} data={chartData} />
         ) : (
-          <p>No data to display.</p>
+          <p>No chart data to display.</p>
         )}
+        <p className="mt-3 text-center text-muted small">
+          Data derived from IEA estimates for 2015-2024.
+        </p>
+        <p>
+          The chart shows the amount of money invested in clean energy compared
+          to that invested in fossil fuels from 2015 to 2024. The diagram shows
+          steady investment in clean energy from 2015 to 2019, followed by a
+          rapid increase from 2020 to 2024.
+        </p>
+
+        {/* --- Featured Article Display Section (Article ID 2) --- */}
+        <div style={{ width: "100%", margin: "60px auto 40px" }}>
+          <h3 className="mb-4 text-center">Featured Context</h3>
+          {featuredArticle ? (
+            <div
+              style={{
+                border: "1px solid #17a2b8",
+                padding: "20px",
+                borderRadius: "8px",
+                boxShadow: "0 4px 10px rgba(23, 162, 184, 0.1)",
+              }}>
+              <h4 style={{ color: "#17a2b8", marginBottom: "10px" }}>
+                {featuredArticle.title}
+              </h4>
+              <p style={{ color: "#555" }}>{featuredArticle.body}</p>
+              {featuredArticle.article_url && (
+                <a
+                  href={featuredArticle.article_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ color: "#17a2b8", fontWeight: "bold" }}>
+                  Read More &raquo;
+                </a>
+              )}
+            </div>
+          ) : (
+            <p className="text-center text-muted">
+              Featured article not available.
+            </p>
+          )}
+        </div>
       </div>
     </div>
   );

@@ -77,7 +77,7 @@ function Articles() {
               {/* Display the Body/Excerpt (using slice for brevity) */}
               <p style={{ fontSize: "0.9em", color: "#555" }}>
                 {article.body
-                  ? article.body.substring(0, 200) + "..."
+                  ? article.body.substring(0, 600) + "..."
                   : "No content available."}
               </p>
 
